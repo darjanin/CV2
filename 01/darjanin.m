@@ -85,12 +85,15 @@ if ~isequal(image_file, 0)
     image_file = fullfile(image_path_name, image_file);
     image_rgb = double(imread(image_file)) / 255;
     handles.working_image = image_rgb;
-    handles.path = image_file;
 end
 imshow(handles.working_image);
 handles.image_loaded = true;
 
-set(handles.info,'String','Image loaded. Press 3rd button to find answer.');
+if (handles.database_loaded)
+    set(handles.info,'String','Image loaded. Press 3rd button to find answer.');
+else
+    set(handles.info,'String','Load database ...');
+end
 
 guidata(hObject, handles);
 
@@ -100,7 +103,7 @@ function load_database_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 data_path = uigetdir();
-'Database is loading'
+disp('Database is loading');
 
 painting_path = [data_path '/Painting'];
 photograph_path = [data_path '/Photograph'];
@@ -115,6 +118,7 @@ handles.photograph_triplet = triplet;
 handles.photograph_saturation = saturation;
 handles.photograph_edges = edges;
 
+handles.database_loaded = true;
 set(handles.info,'String','Database loaded. Load image.');
 
 guidata(hObject, handles);
@@ -173,30 +177,34 @@ function photo_or_painting_Callback(hObject, eventdata, handles)
 % hObject    handle to photo_or_painting (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[triplet, saturation, edges] = calculate_features(handles.working_image);
+if (handles.image_loaded & handles.database_loaded)
+    [triplet, saturation, edges] = calculate_features(handles.working_image);
 
-chance_of_painting = 0;
-saturation_half = (handles.painting_saturation + handles.photograph_saturation) / 2;
-triplet_half = (handles.painting_triplet + handles.photograph_triplet) / 2;
-edges_half = (handles.painting_edges + handles.photograph_edges) / 2;
+    chance_of_painting = 0;
+    saturation_half = (handles.painting_saturation + handles.photograph_saturation) / 2;
+    triplet_half = (handles.painting_triplet + handles.photograph_triplet) / 2;
+    edges_half = (handles.painting_edges + handles.photograph_edges) / 2;
 
-if saturation > saturation_half
-    chance_of_painting = chance_of_painting + 1;
-end
-if triplet > triplet_half
-    chance_of_painting = chance_of_painting + 1;
-end
-if edges < edges_half
-    chance_of_painting = chance_of_painting + 1;
-end
+    if saturation > saturation_half
+        chance_of_painting = chance_of_painting + 1;
+    end
+    if triplet > triplet_half
+        chance_of_painting = chance_of_painting + 1;
+    end
+    if edges < edges_half
+        chance_of_painting = chance_of_painting + 1;
+    end
 
-if chance_of_painting >= 2
-    set(handles.info,'String','Image is Painting.');
+    if chance_of_painting >= 2
+        set(handles.info,'String','Image is Painting.');
+    else
+        set(handles.info,'String','Image is Photo.');
+    end
+elseif (not(handles.image_loaded) & handles.database_loaded)
+    set(handles.info,'String','Database loaded. Load image.');
 else
-    set(handles.info,'String','Image is Photo.');
+    set(handles.info,'String','Load database ...');
 end
-
-
 
 
     
